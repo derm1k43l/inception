@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+
+  # Nginx
+  nginx:
+    build:
+      context: ./requirements/nginx
+      dockerfile: Dockerfile
+    container_name: nginx
+    depends_on:
+      - wordpress
+    ports:
+      - "443:443"
+    volumes:
+      - wordpress_data:/var/www/html
+    networks:
+      - inception-network
+    restart: always
+
+  # WordPress
+  wordpress:
+    build:
+      context: ./requirements/wordpress
+      dockerfile: Dockerfile
+    container_name: wordpress
+    depends_on:
+        mariadb:
+          condition: service_healthy
+    volumes:
+        - wordpress_data:/var/www/html
+    networks:
+        - inception-network
+    env_file:
+        - .env
+    restart: always
+
+  # MariaDB
+  mariadb:
+    build:
+      context: ./requirements/mariadb
+      dockerfile: Dockerfile
+    container_name: mariadb
+    volumes:
+        - mariadb_data:/var/lib/mysql
+    networks:
+         - inception-network
+    env_file:
+         - .env
+    restart: always
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      retries: 5
+
+# define persistent volumes for the containers
+# Volumes
+volumes:
+  wordpress_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /Users/${USER}/Desktop/asd/wordpress1
+      o: bind
+  mariadb_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /Users/${USER}/Desktop/asd/mariadb1
+      o: bind
+
+# create a bridge network that let the containers
+# communicate with each other in a secure way because
+# the containers are isolated from the host machine
+
+# Networks
+networks:
+  inception-network:
+    driver: bridge

@@ -1,79 +1,58 @@
-version: '3.8'
+version: "3.8"
 
-services:
-
-  # Nginx
+services: 
   nginx:
-    build:
-      context: ./requirements/nginx
+    build: 
+      context: req/nginx/.
       dockerfile: Dockerfile
     container_name: nginx
     depends_on:
-      - wordpress
+      - wp
+      - mdb
     ports:
       - "443:443"
     volumes:
-      - wordpress_data:/var/www/html
+      - ./web:/var/www/html
     networks:
       - inception-network
     restart: always
 
-  # WordPress
-  wordpress:
+  wp:
     build:
-      context: ./requirements/wordpress
+      context: req/wp/.
       dockerfile: Dockerfile
-    container_name: wordpress
-    depends_on:
-        mariadb:
-          condition: service_healthy
-    volumes:
-        - wordpress_data:/var/www/html
-    networks:
-        - inception-network
+    container_name: wp-php
     env_file:
-        - .env
+      - .env
+    depends_on:
+      mdb:
+        condition: service_healthy
+    volumes:
+      - ./web:/var/www/html
+      - ./.env:/var/www/html/.env
+    networks:
+      - inception-network
     restart: always
 
-  # MariaDB
-  mariadb:
-    build:
-      context: ./requirements/mariadb
+  mdb:
+    build: 
+      context: req/mdb/.
       dockerfile: Dockerfile
-    container_name: mariadb
+    container_name: mdb
     volumes:
-        - mariadb_data:/var/lib/mysql
-    networks:
-         - inception-network
+      - ./db:/var/lib/mysql
     env_file:
-         - .env
+      - .env
+    networks:
+      - inception-network
     restart: always
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 5s
+      interval: 3s
+      timeout: 3s
       retries: 5
 
-# define persistent volumes for the containers
-# Volumes
-volumes:
-  wordpress_data:
-    driver: local
-    driver_opts:
-      type: none
-      device: /Users/${USER}/Desktop/asd/wordpress1
-      o: bind
-  mariadb_data:
-    driver: local
-    driver_opts:
-      type: none
-      device: /Users/${USER}/Desktop/asd/mariadb1
-      o: bind
-
-# create a bridge network that let the containers
-# communicate with each other in a secure way because
-# the containers are isolated from the host machine
-
-# Networks
 networks:
   inception-network:
     driver: bridge
+

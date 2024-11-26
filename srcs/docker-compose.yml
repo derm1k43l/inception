@@ -12,10 +12,10 @@ services:
     ports:
       - "443:443"
     volumes:
-      - ./web:/var/www/html
+      - web-data:/var/www/html
     networks:
       - inception-network
-    restart: always
+    restart: on-failure
 
   wp:
     build:
@@ -28,11 +28,19 @@ services:
       mdb:
         condition: service_healthy
     volumes:
-      - ./web:/var/www/html
+      - web-data:/var/www/html
       - ./.env:/var/www/html/.env
+    secrets:
+      - db_name
+      - db_user
+      - db_root_pass
+      - wp_admin
+      - wp_admin_pass
+      - wp_usr
+      - wp_usr_pass
     networks:
       - inception-network
-    restart: always
+    restart: on-failure
 
   mdb:
     build: 
@@ -40,12 +48,18 @@ services:
       dockerfile: Dockerfile
     container_name: mdb
     volumes:
-      - ./db:/var/lib/mysql
+      - db-data:/var/lib/mysql
+    secrets:
+      - db_name
+      - db_user
+      - db_root_pass
     env_file:
       - .env
+    environment:
+      WP_URL: "localhost" #change to your domain on production
     networks:
       - inception-network
-    restart: always
+    restart: on-failure
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 3s
@@ -56,3 +70,34 @@ networks:
   inception-network:
     driver: bridge
 
+volumes:
+  web-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${HOME}/data/wordpress
+      o: bind
+  db-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${HOME}/data/mariadb
+      o: bind
+
+secrets:
+  db_name:
+    file: ./secrets/db_name.txt
+  db_user:
+    file: ./secrets/db_user.txt
+  db_root_pass:
+    file: ./secrets/db_root_pass.txt
+  
+  wp_admin:
+    file: ./secrets/wp_admin.txt
+  wp_admin_pass:
+    file: ./secrets/wp_admin_pass.txt
+  
+  wp_usr:
+    file: ./secrets/wp_usr.txt
+  wp_usr_pass:
+    file: ./secrets/wp_usr_pass.txt

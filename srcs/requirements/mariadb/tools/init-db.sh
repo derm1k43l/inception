@@ -7,5 +7,6 @@ DB_ROOT_PASS=$(cat /run/secrets/db_root_pass)
 
 # command initializes the MySQL system database, creating necessary files and structure
 mysql_install_db
-# start mysql
+# start mysql daemon
 mysqld
+sleep 7

@@ -12,6 +12,6 @@ RUN openssl req -x509 -nodes -days 365 \
     && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 443
-COPY default /etc/nginx/sites-available/.
+COPY ./conf/default /etc/nginx/sites-available/.
 
 CMD [ "nginx", "-g", "daemon off;" ]

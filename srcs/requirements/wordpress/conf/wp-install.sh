@@ -6,8 +6,7 @@ if [ ! -f /var/www/html/.env ]; then
     exit 1
 fi
 
-# Load environment variables from .env file
-export $(grep -v '^#' /var/www/html/.env | xargs)
+export $(cat /var/www/html/.env)
 
 # Load sensitive variables from secrets
 DB_NAME=$(cat /run/secrets/db_name)
@@ -18,6 +17,9 @@ ADMIN_PASS=$(cat /run/secrets/wp_admin_pass)
 WP_USR=$(cat /run/secrets/wp_usr)
 WP_USR_PASS=$(cat /run/secrets/wp_usr_pass)
 
+# Wait for database to be ready
+sleep 5
+
 # Debug: Print sensitive values (for testing only; remove in production!)
 echo "============= Environment Variables ============="
 env
@@ -27,24 +29,27 @@ echo "======================================================"
 cd /var/www/html
 if ! curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar; then
     echo "Failed to download wp-cli.phar."
+    exit 1
 fi
 chmod +x wp-cli.phar
 
-# download WordPress core files
+# if wp-includes directory does not exist, download WordPress core files
 if [ ! -d "wp-includes" ]; then
     echo "WordPress core downloading..."
     ./wp-cli.phar core download --allow-root
 else
-    echo "WordPress core exists!"
+    echo "WordPress core files already exist!"
 fi
 
-# create database
+# check if the database exists if not create it
 if ! ./wp-cli.phar db query "SELECT 1;" --allow-root; then
     echo "Database does not exist, creating..."
     ./wp-cli.phar db create --allow-root
 else
-    echo "Database exists!"
+    echo "Database already exists!"
 fi
+# 3rd time ony, wokrs so i added sleep 5
+sleep 5
 
 # Create wp-config.php
 if [ ! -f "wp-config.php" ]; then
@@ -59,17 +64,17 @@ else
     echo "wp-config.php already exists."
 fi
 
-# Install WordPress
+# Install WordPress if not already installed
 if ! ./wp-cli.phar core is-installed --allow-root; then
     ./wp-cli.phar core install \
-        --url=$WP_URL \
-        --title=$WP_TITLE \
-        --admin_user=$ADMIN_USER \
-        --admin_password=$ADMIN_PASS \
-        --admin_email=$ADMIN_EMAIL \
+        --url="$WP_URL" \
+        --title="$WP_TITLE" \
+        --admin_user="$ADMIN_USER" \
+        --admin_password="$ADMIN_PASS" \
+        --admin_email="$ADMIN_EMAIL" \
         --allow-root
 else
-    echo "WordPress is installed."
+    echo "WordPress is already installed."
 fi
 
 # Create second regular user
@@ -84,8 +89,6 @@ else
     echo "User $WP_USR already exists."
 fi
 
-echo "Creating user: $WP_USR with email $WP_REGULAR_EMAIL"
-
 # Change ownership of the WordPress files to the www-data user
 mkdir -p /run/php
 chown -R www-data:www-data /var/www/html/*
@@ -97,7 +100,8 @@ chown -R www-data:www-data /var/www/html/*
 #   echo "PHP-FPM 7.4 is not installed"
 # fi
 
+# Clean up by removing the wp-cli.phar file
 rm wp-cli.phar
 
-# Start PHP-FPM in the foreground
+# Start PHP-FPM 7.4 in the foreground
 php-fpm7.4 -F

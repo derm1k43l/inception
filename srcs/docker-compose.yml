@@ -1,35 +1,38 @@
 version: "3.8"
 
-services: 
+services:
   nginx:
-    build: 
-      context: req/nginx/.
+    build:
+      context: ./requirements/nginx/.
       dockerfile: Dockerfile
     container_name: nginx
     depends_on:
-      - wp
-      - mdb
+      - wordpress
+      - mariadb
     ports:
       - "443:443"
     volumes:
-      - web-data:/var/www/html
+      - wordpress:/var/www/html
     networks:
       - inception-network
     restart: on-failure
 
-  wp:
+  wordpress:
     build:
-      context: req/wp/.
+      context: ./requirements/wordpress/.
       dockerfile: Dockerfile
-    container_name: wp-php
+    container_name: wordpress
     env_file:
       - .env
     depends_on:
-      mdb:
+      mariadb:
         condition: service_healthy
     volumes:
-      - web-data:/var/www/html
+      - wordpress:/var/www/html
       - ./.env:/var/www/html/.env
+    networks:
+      - inception-network
+    restart: on-failure
     secrets:
       - db_name
       - db_user
@@ -38,25 +41,18 @@ services:
       - wp_admin_pass
       - wp_usr
       - wp_usr_pass
-    networks:
-      - inception-network
-    restart: on-failure
 
-  mdb:
-    build: 
-      context: req/mdb/.
+  mariadb:
+    build:
+      context: ./requirements/mariadb/.
       dockerfile: Dockerfile
-    container_name: mdb
-    volumes:
-      - db-data:/var/lib/mysql
-    secrets:
-      - db_name
-      - db_user
-      - db_root_pass
+    container_name: mariadb
     env_file:
       - .env
     environment:
-      WP_URL: "localhost" #change to your domain on production
+      WP_URL: "localhost"
+    volumes:
+      - mariadb:/var/lib/mysql
     networks:
       - inception-network
     restart: on-failure
@@ -65,23 +61,116 @@ services:
       interval: 3s
       timeout: 3s
       retries: 5
+    secrets:
+      - db_name
+      - db_user
+      - db_root_pass
+  
+  redis:
+    build: 
+      context: ./requirements/bonus/redis/.
+      dockerfile: Dockerfile
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis:/data
+    networks:
+      - inception-network
+
+  ftp:
+    build:
+      context: ./requirements/bonus/ftp/.
+      dockerfile: Dockerfile
+    container_name: ftp
+    ports:
+      - "20-21:20-21"
+      - "21000-21010:21000-21010"
+    volumes:
+      - ftp:/home/vsftpd
+      - wordpress:/var/www/html
+    networks:
+      - inception-network
+    environment:
+      FTP_USER: "admin"
+      FTP_PASS: "admin"
+      PASV_ADDRESS: "localhost"
+      PASV_MIN_PORT: "21000"
+      PASV_MAX_PORT: "21010"
+
+  website:
+    build: 
+      context: ./requirements/bonus/website/.
+      dockerfile: Dockerfile
+    container_name: website
+    ports:
+      - "80:80"
+    volumes:
+      - website:/usr/share/nginx/html
+    networks:
+      - inception-network
+
+  adminer:
+    image: adminer:4.8.0
+    ports:
+      - "8085:8080"
+    depends_on:
+      - mariadb
+    container_name: adminer
+    networks:
+      - inception-network
+  
+  email:
+    image: catatnight/postfix
+    container_name: email
+    ports:
+      - "25:25"
+    environment:
+      - MAIL_DOMAIN=inception.com
+      - SMTP_USER=test@example.com
+      - SMTP_PASS=testpass
+    restart: on-failure
+    networks:
+      - inception-network
 
 networks:
   inception-network:
     driver: bridge
 
 volumes:
-  web-data:
+  wordpress:
     driver: local
     driver_opts:
       type: none
-      device: ${HOME}/data/wordpress
+      device: ${HOME}/data/wordpress1
       o: bind
-  db-data:
+  
+  mariadb:
     driver: local
     driver_opts:
       type: none
-      device: ${HOME}/data/mariadb
+      device: ${HOME}/data/mariadb1
+      o: bind
+
+  redis:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${HOME}/data/redis
+      o: bind
+
+  ftp:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${HOME}/data/ftp
+      o: bind
+
+  website:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${HOME}/data/website
       o: bind
 
 secrets:

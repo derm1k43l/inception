@@ -3,15 +3,14 @@ WORDPRESS_DATA = $(HOME)/data/wordpress1/
 MARIADB_DATA = $(HOME)/data/mariadb1/
 
 # Increase the timeout for the docker-compose command
-export mak=200
+export COMPOSE_HTTP_TIMEOUT=200
 
 # Default target
-all: creat_dirs start_containers #hosts
+all: creat_dirs start_containers hosts
 
-# in vm only
-#hosts:
-#	@echo "Adding hosts to /etc/hosts file...\n"
-#	@echo 127.0.0.1 mrusu.42.fr >> /etc/hosts"
+hosts:
+	@echo "Adding user.42.fr to /etc/hosts file...\n"
+	@echo 127.0.0.1 mrusu.42.fr >> /etc/hosts
 
 bonus: create_bonus_dir start_bonus_services
 

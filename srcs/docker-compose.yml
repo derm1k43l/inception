@@ -1,4 +1,4 @@
-version: "3.8"
+version: '3.7'
 
 services:
   nginx:
@@ -73,8 +73,6 @@ services:
     container_name: redis
     ports:
       - "6379:6379"
-    volumes:
-      - redis:/data
     networks:
       - inception-network
 
@@ -87,7 +85,6 @@ services:
       - "20-21:20-21"
       - "21000-21010:21000-21010"
     volumes:
-      - ftp:/home/vsftpd
       - wordpress:/var/www/html
     networks:
       - inception-network
@@ -106,7 +103,7 @@ services:
     ports:
       - "80:80"
     volumes:
-      - website:/usr/share/nginx/html
+      - wordpress:/var/www/html
     networks:
       - inception-network
 
@@ -150,27 +147,6 @@ volumes:
     driver_opts:
       type: none
       device: ${HOME}/data/mariadb1
-      o: bind
-
-  redis:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${HOME}/data/redis
-      o: bind
-
-  ftp:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${HOME}/data/ftp
-      o: bind
-
-  website:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${HOME}/data/website
       o: bind
 
 secrets:

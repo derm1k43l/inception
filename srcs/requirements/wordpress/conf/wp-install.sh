@@ -8,6 +8,8 @@ fi
 
 export $(cat /var/www/html/.env)
 
+sleep 3
+
 # Load sensitive variables from secrets
 DB_NAME=$(cat /run/secrets/db_name)
 DB_USER=$(cat /run/secrets/db_user)
@@ -19,11 +21,6 @@ WP_USR_PASS=$(cat /run/secrets/wp_usr_pass)
 
 # Wait for database to be ready
 sleep 5
-
-# Debug: Print sensitive values (for testing only; remove in production!)
-echo "============= Environment Variables ============="
-env
-echo "======================================================"
 
 # Download the wp-cli.phar (WordPress Command Line Interface) file and allow to execute it
 cd /var/www/html
@@ -87,6 +84,29 @@ if ! ./wp-cli.phar user get "$WP_USR" --allow-root; then
         --allow-root
 else
     echo "User $WP_USR already exists."
+fi
+
+# Configure Redis
+if ! ./wp-cli.phar plugin is-installed redis-cache --allow-root; then
+    echo "Installing Redis plugin..."
+    ./wp-cli.phar plugin install redis-cache --activate --allow-root
+fi
+
+# Enable Redis cache in WordPress
+if ! ./wp-cli.phar redis enable --allow-root; then
+    echo "Enabling Redis Cache..."
+    ./wp-cli.phar redis enable --allow-root
+fi
+
+# Configure wp-config.php for Redis
+if ! grep -q "WP_CACHE_KEY_SALT" wp-config.php; then
+    echo "Adding Redis configuration to wp-config.php..."
+    echo "
+define('WP_REDIS_HOST', '127.0.0.1');
+define('WP_REDIS_PORT', 6379);
+define('WP_CACHE_KEY_SALT', '$WP_URL:');
+define('WP_REDIS_DATABASE', 0);
+" >> wp-config.php
 fi
 
 # Change ownership of the WordPress files to the www-data user

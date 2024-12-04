@@ -6,24 +6,11 @@ MARIADB_DATA = $(HOME)/data/mariadb1/
 export COMPOSE_HTTP_TIMEOUT=200
 
 # Default target
-all: creat_dirs start_containers hosts
+all: creat_dirs start_containers #hosts
 
-hosts:
-	@echo "Adding user.42.fr to /etc/hosts file...\n"
-	@echo 127.0.0.1 mrusu.42.fr >> /etc/hosts
-
-bonus: create_bonus_dir start_bonus_services
-
-start_bonus_services:
-	@echo "Starting the containers...\n"
-	@docker-compose -f $(NAME) up --build -d redis ftp website adminer email
-
-create_bonus_dir:
-	@echo "Creating directories if they don't exist...\n"
-	mkdir -p $(HOME)/data/redis
-	mkdir -p $(HOME)/data/ftp
-	mkdir -p $(HOME)/data/website
-	mkdir -p $(HOME)/data/adminer
+#hosts: only in vm
+#	@echo "Adding user.42.fr to /etc/hosts file...\n"
+#	@echo 127.0.0.1 mrusu.42.fr >> /etc/hosts
 
 creat_dirs:
 	@echo "Creating directories if they don't exist...\n"
@@ -32,7 +19,7 @@ creat_dirs:
 
 start_containers:
 	@echo "Starting the containers...\n"
-	@docker-compose -f $(NAME) up --build -d nginx wordpress mariadb
+	@docker-compose -f $(NAME) up --build -d nginx wordpress mariadb redis ftp website adminer
 
 # Stop and remove containers (keep volumes)
 down:

@@ -1,4 +1,5 @@
 FROM alpine:3.18
+# Install vsftpd and create FTP user
 RUN apk add --no-cache vsftpd \
     && mkdir -p /home/vsftpd/fptuser \
     && echo "Welcome to FTP server" > /home/vsftpd/fptuser/welcome.txt \

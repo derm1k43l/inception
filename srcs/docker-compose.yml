@@ -75,8 +75,6 @@ services:
     image: redis
     ports:
       - "6379:6379"
-    depends_on:
-      - wordpress
     networks:
       - inception-network
     restart: on-failure

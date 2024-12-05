@@ -57,8 +57,8 @@ if [ ! -f "wp-config.php" ]; then
     --dbpass=$DB_PASS \
     --dbhost=$DB_HOST \
     --allow-root
-    # echo "define( 'WP_REDIS_HOST', 'redis' );" >> wp-config.php
-    # echo "define( 'WP_REDIS_PORT', 6379 );" >> wp-config.php
+    echo "define( 'WP_REDIS_HOST', 'redis' );" >> wp-config.php
+    echo "define( 'WP_REDIS_PORT', 6379 );" >> wp-config.php
 else
     echo "wp-config.php already exists."
 fi
@@ -90,7 +90,7 @@ fi
 
 # Install and activate the Redis Object Cache plugin
 ./wp-cli.phar plugin install redis-cache --activate --allow-root
-./wp-cli.phar redis enable --allow-root || echo "Could not enable Redis cache"
+# ./wp-cli.phar redis enable --allow-root
 
 # Change ownership of the WordPress files to the www-data user
 mkdir -p /run/php

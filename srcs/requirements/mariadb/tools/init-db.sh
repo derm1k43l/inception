@@ -9,4 +9,4 @@ DB_ROOT_PASS=$(cat /run/secrets/db_root_pass)
 mysql_install_db
 # start mysql daemon
 mysqld
-sleep 7
+sleep 10

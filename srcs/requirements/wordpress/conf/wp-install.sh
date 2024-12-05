@@ -8,7 +8,7 @@ fi
 
 export $(cat /var/www/html/.env)
 
-sleep 3
+sleep 5
 
 # Load sensitive variables from secrets
 DB_NAME=$(cat /run/secrets/db_name)
@@ -20,7 +20,7 @@ WP_USR=$(cat /run/secrets/wp_usr)
 WP_USR_PASS=$(cat /run/secrets/wp_usr_pass)
 
 # Wait for database to be ready
-sleep 5
+sleep 7
 
 # Download the wp-cli.phar (WordPress Command Line Interface) file and allow to execute it
 cd /var/www/html
@@ -86,39 +86,13 @@ else
     echo "User $WP_USR already exists."
 fi
 
-# Configure Redis
-if ! ./wp-cli.phar plugin is-installed redis-cache --allow-root; then
-    echo "Installing Redis plugin..."
-    ./wp-cli.phar plugin install redis-cache --activate --allow-root
-fi
-
-# Enable Redis cache in WordPress
-if ! ./wp-cli.phar redis enable --allow-root; then
-    echo "Enabling Redis Cache..."
-    ./wp-cli.phar redis enable --allow-root
-fi
-
-# Configure wp-config.php for Redis
-if ! grep -q "WP_CACHE_KEY_SALT" wp-config.php; then
-    echo "Adding Redis configuration to wp-config.php..."
-    echo "
-define('WP_REDIS_HOST', '127.0.0.1');
-define('WP_REDIS_PORT', 6379);
-define('WP_CACHE_KEY_SALT', '$WP_URL:');
-define('WP_REDIS_DATABASE', 0);
-" >> wp-config.php
-fi
+# Install and activate the Redis Object Cache plugin
+./wp-cli.phar plugin install redis-cache --activate --allow-root
+./wp-cli.phar redis enable --allow-root || echo "Could not enable Redis cache"
 
 # Change ownership of the WordPress files to the www-data user
 mkdir -p /run/php
 chown -R www-data:www-data /var/www/html/*
-
-# # Debugging: check if PHP-FPM is installed
-# if [ -x /usr/sbin/php-fpm7.4 ]; then
-#   echo "PHP-FPM 7.4 is installed"
-# else
-#   echo "PHP-FPM 7.4 is not installed"
-# fi
 
 # Clean up by removing the wp-cli.phar file
 rm wp-cli.phar

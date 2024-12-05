@@ -15,8 +15,7 @@ init_file = /etc/mysql/init.sql
 # * Basic Settings
 #
  
-#we cahnge user from mysql to root uncomment datadir adn tmpdir
-
+#we chnge user from mysql to root uncomment datadir adn tmpdir
 user                    = root
 pid-file                = /run/mysqld/mysqld.pid
 basedir                 = /usr

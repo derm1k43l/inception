@@ -10,4 +10,3 @@ EXPOSE 6379
 
 # Start Redis server with default configuration
 CMD ["redis-server", "--bind", "0.0.0.0", "--protected-mode", "no"]
-

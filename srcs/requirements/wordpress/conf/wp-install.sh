@@ -57,6 +57,8 @@ if [ ! -f "wp-config.php" ]; then
     --dbpass=$DB_PASS \
     --dbhost=$DB_HOST \
     --allow-root
+    # echo "define( 'WP_REDIS_HOST', 'redis' );" >> wp-config.php
+    # echo "define( 'WP_REDIS_PORT', 6379 );" >> wp-config.php
 else
     echo "wp-config.php already exists."
 fi
